@@ -1,0 +1,17 @@
+{
+	"include": ["**/*"],
+	"compilerOptions": {
+		"incremental": false,
+		"strict": true,
+		"module": "NodeNext",
+		"moduleResolution": "nodenext",
+		"types": ["node"],
+		"resolveJsonModule": true,
+		"noImplicitAny": true,
+		"esModuleInterop": true,
+		"strictNullChecks": true,
+		"experimentalDecorators": true,
+		"useDefineForClassFields": true,
+		"skipLibCheck": true,
+	},
+}
