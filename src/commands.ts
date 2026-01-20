@@ -19,10 +19,10 @@ type CommandInteractionOptions = Omit<
 	| 'getSubcommand'
 >
 
-type InteractionFunction<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> = (context: KarmaContext<A, B, C>, options: CommandInteractionOptions) => void;
-type PredictionFunction<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> = (interaction: Discord.AutocompleteInteraction<'cached'>, client: C) => void;
+type InteractionFunction<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> = (context: KarmaContext<A, B, C>, options: CommandInteractionOptions) => void;
+type PredictionFunction<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> = (interaction: Discord.AutocompleteInteraction<'cached'>, client: C) => void;
 
-class CommandOption<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> {
+class CommandOption<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> {
 	name: string;
 	description: string;
 	onInteract: Nullable<InteractionFunction<A, B, C>> = null;
@@ -33,7 +33,7 @@ class CommandOption<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B
 	}
 }
 
-class CommandBase<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandOption<A, B, C> {
+class CommandBase<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandOption<A, B, C> {
 	options: CommandOption<A, B, C>[] = [];
 
 	constructor(name: string, description: string) {
@@ -119,7 +119,7 @@ class CommandBase<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, 
 	}
 }
 
-class CommandPrimitive<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandOption<A, B, C> {
+class CommandPrimitive<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandOption<A, B, C> {
 	required: boolean = false;
 
 	constructor(name: string, description: string) {
@@ -136,7 +136,7 @@ class CommandPrimitive<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A
 	}
 }
 
-class SubcommandGroup<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandOption<A, B, C> {
+class SubcommandGroup<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandOption<A, B, C> {
 	parent: KarmaCommand<A, B, C>;
 	options: Subcommand<A, B, C>[] = [];
 
@@ -163,7 +163,7 @@ class SubcommandGroup<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A,
 	}
 }
 
-class Subcommand<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandBase<A, B, C> {
+class Subcommand<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandBase<A, B, C> {
 	parent: KarmaCommand<A, B, C> | SubcommandGroup<A, B, C>;
 	declare options: CommandPrimitive<A, B, C>[];
 	constructor(parent: KarmaCommand<A, B, C> | SubcommandGroup<A, B, C>, name: string, description: string) {
@@ -196,7 +196,7 @@ class Subcommand<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C
 	}
 }
 
-class CommandString<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandPrimitive<A, B, C> {
+class CommandString<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandPrimitive<A, B, C> {
 	autocomplete: boolean = false;
 	minLength: Nullable<number> = null;
 	maxLength: Nullable<number> = null;
@@ -218,7 +218,7 @@ class CommandString<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B
 	}
 }
 
-class CommandInteger<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandPrimitive<A, B, C> {
+class CommandInteger<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandPrimitive<A, B, C> {
 	autocomplete: boolean = false;
 	minValue: Nullable<number> = null;
 	maxValue: Nullable<number> = null;
@@ -240,7 +240,7 @@ class CommandInteger<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, 
 	}
 }
 
-class CommandNumber<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandInteger<A, B, C> {
+class CommandNumber<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandInteger<A, B, C> {
 	constructor(name: string, description: string) {
 		super(name, description);
 	}
@@ -256,7 +256,7 @@ class CommandNumber<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B
 	}
 }
 
-class CommandBoolean<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandPrimitive<A, B, C> {
+class CommandBoolean<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandPrimitive<A, B, C> {
 	constructor(name: string, description: string) {
 		super(name, description);
 	}
@@ -264,7 +264,7 @@ class CommandBoolean<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, 
 	raw() { return this.rawPrimitive(Discord.ApplicationCommandOptionType.Boolean) as Discord.ApplicationCommandBooleanOptionData; }
 }
 
-class CommandUser<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandPrimitive<A, B, C> {
+class CommandUser<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandPrimitive<A, B, C> {
 	constructor(name: string, description: string) {
 		super(name, description);
 	}
@@ -272,7 +272,7 @@ class CommandUser<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, 
 	raw() { return this.rawPrimitive(Discord.ApplicationCommandOptionType.User) as Discord.ApplicationCommandUserOptionData; }
 }
 
-class CommandRole<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandPrimitive<A, B, C> {
+class CommandRole<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandPrimitive<A, B, C> {
 	constructor(name: string, description: string) {
 		super(name, description);
 	}
@@ -280,7 +280,7 @@ class CommandRole<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, 
 	raw() { return this.rawPrimitive(Discord.ApplicationCommandOptionType.Role) as Discord.BaseApplicationCommandOptionsData; }
 }
 
-class CommandChannel<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandPrimitive<A, B, C> {
+class CommandChannel<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandPrimitive<A, B, C> {
 	channelTypes: Nullable<Discord.ChannelType[]> = null;
 
 	constructor(name: string, description: string) {
@@ -295,7 +295,7 @@ class CommandChannel<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, 
 	}
 }
 
-class CommandMentionable<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandPrimitive<A, B, C> {
+class CommandMentionable<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandPrimitive<A, B, C> {
 	constructor(name: string, description: string) {
 		super(name, description);
 	}
@@ -303,7 +303,7 @@ class CommandMentionable<A extends KarmaContext<A, B, C>, B extends KarmaCommand
 	raw() { return this.rawPrimitive(Discord.ApplicationCommandOptionType.Mentionable) as Discord.BaseApplicationCommandOptionsData; }
 }
 
-class CommandAttachment<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandPrimitive<A, B, C> {
+class CommandAttachment<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> extends CommandPrimitive<A, B, C> {
 	constructor(name: string, description: string) {
 		super(name, description);
 	}
@@ -311,7 +311,7 @@ class CommandAttachment<A extends KarmaContext<A, B, C>, B extends KarmaCommand<
 	raw() { return this.rawPrimitive(Discord.ApplicationCommandOptionType.Attachment) as Discord.BaseApplicationCommandOptionsData; }
 }
 
-type CommandArgs<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> = {
+type CommandArgs<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> = {
 	name: string,
 	description: string,
 	category?: string,
@@ -319,7 +319,7 @@ type CommandArgs<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C
 	permissions?: PermissionResolvable<A, B, C>[]
 }
 
-export class KarmaCommand<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> extends CommandBase<A, B, C> {
+export class KarmaCommand<A extends KarmaClient<A, B, C> = KarmaClient<any, any, any>, B extends KarmaContext<A, B, C> = KarmaContext<any, any, any>, C extends KarmaCommand<A, B, C> = KarmaCommand<any, any, any>> extends CommandBase<A, B, C> {
 	category: string = 'uncategorized';
 	nsfw: boolean = false;
 	permissions: PermissionResolvable<A, B, C>[] = [];
@@ -343,7 +343,7 @@ export class KarmaCommand<A extends KarmaContext<A, B, C>, B extends KarmaComman
 		return option;
 	}
 
-	execute(interaction: Discord.ChatInputCommandInteraction<'cached'>) {
+	getExecutor(interaction: Discord.ChatInputCommandInteraction<'cached'>) {
 		const complex = [Discord.ApplicationCommandOptionType.SubcommandGroup, Discord.ApplicationCommandOptionType.Subcommand];
 		const functions: InteractionFunction<A, B, C>[] = this.onInteract === null ? [] : [this.onInteract];
 		function traverse(options: readonly Discord.CommandInteractionOption<'cached'>[], slashes: CommandOption<A, B, C>[]) {
@@ -367,7 +367,7 @@ export class KarmaCommand<A extends KarmaContext<A, B, C>, B extends KarmaComman
 		}
 	}
 
-	autocomplete(interaction: Discord.AutocompleteInteraction<'cached'>) {
+	getAutocompleter(interaction: Discord.AutocompleteInteraction<'cached'>) {
 		const complex = [Discord.ApplicationCommandOptionType.SubcommandGroup, Discord.ApplicationCommandOptionType.Subcommand];
 		const functions: PredictionFunction<A, B, C>[] = [];
 		function traverse(options: readonly Discord.CommandInteractionOption<'cached'>[], slashes: CommandOption<A, B, C>[]) {

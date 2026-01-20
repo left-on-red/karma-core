@@ -21,8 +21,8 @@ import { type PermissionResolvable } from './permissions';
 
 type OptionType = string | number | boolean | User | GuildMember | Channel | Role | Attachment;
 
-export class KarmaContext<A extends KarmaContext<A, B, C>, B extends KarmaCommand<A, B, C>, C extends KarmaClient<A, B, C>> {
-	client: KarmaClient<A, B, C>;
+export class KarmaContext<A extends KarmaClient<A, B, C> = KarmaClient<any, any, any>, B extends KarmaContext<A, B, C> = KarmaContext<any, any, any>, C extends KarmaCommand<A, B, C> = KarmaCommand<any, any, any>> {
+	client: A;
 	loggingChannel: LoggingStream;
 
 	interaction: ChatInputCommandInteraction<'cached'>;
@@ -37,7 +37,7 @@ export class KarmaContext<A extends KarmaContext<A, B, C>, B extends KarmaComman
 	error(message: string | Error) { return this.loggingChannel.error(message); }
 	debug(message: string | Object) { return this.loggingChannel.debug(message); }
 
-	constructor(client: KarmaClient<A, B, C>, interaction: ChatInputCommandInteraction<'cached'>) {
+	constructor(client: A, interaction: ChatInputCommandInteraction<'cached'>) {
 		this.client = client;
 		this.loggingChannel = this.client.logger.channel(interaction.channel!.id.toString());
 
