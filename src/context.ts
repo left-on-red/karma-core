@@ -22,7 +22,7 @@ import { type PermissionResolvable } from './permissions';
 type OptionType = string | number | boolean | User | GuildMember | Channel | Role | Attachment;
 
 export class KarmaContext<A extends KarmaClient<A, B, C> = KarmaClient<any, any, any>, B extends KarmaContext<A, B, C> = KarmaContext<any, any, any>, C extends KarmaCommand<A, B, C> = KarmaCommand<any, any, any>> {
-	client: A;
+	bot: A;
 	loggingChannel: LoggingStream;
 
 	interaction: ChatInputCommandInteraction<'cached'>;
@@ -38,8 +38,8 @@ export class KarmaContext<A extends KarmaClient<A, B, C> = KarmaClient<any, any,
 	debug(message: string | Object) { return this.loggingChannel.debug(message); }
 
 	constructor(client: A, interaction: ChatInputCommandInteraction<'cached'>) {
-		this.client = client;
-		this.loggingChannel = this.client.logger.channel(interaction.channel!.id.toString());
+		this.bot = client;
+		this.loggingChannel = this.bot.logger.channel(interaction.channel!.id.toString());
 
 		this.interaction = interaction;
 		this.user = interaction.user;

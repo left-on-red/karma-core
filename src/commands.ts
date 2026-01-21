@@ -19,8 +19,8 @@ type CommandInteractionOptions = Omit<
 	| 'getSubcommand'
 >
 
-type InteractionFunction<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> = (context: KarmaContext<A, B, C>, options: CommandInteractionOptions) => void;
-type PredictionFunction<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> = (interaction: Discord.AutocompleteInteraction<'cached'>, client: C) => void;
+type InteractionFunction<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> = (context: B, options: CommandInteractionOptions) => void;
+type PredictionFunction<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> = (interaction: Discord.AutocompleteInteraction<'cached'>, client: A) => void;
 
 class CommandOption<A extends KarmaClient<A, B, C>, B extends KarmaContext<A, B, C>, C extends KarmaCommand<A, B, C>> {
 	name: string;

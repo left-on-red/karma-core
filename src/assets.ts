@@ -32,6 +32,10 @@ export class AssetManager<T> extends EventEmitter<AssetManagerEvents<T>> {
 		return [...this.assets.values()];
 	}
 
+	add(value: T) {
+		this.assets.set(this.nameResolver(value), value);
+	}
+
 	// type guarded for when has() is called before get()
 	has<K extends string>(assetName: K): this is { get(p: K): T } & this {
 		return this.assets.has(assetName);
@@ -43,7 +47,7 @@ export class AssetManager<T> extends EventEmitter<AssetManagerEvents<T>> {
 		if (stats.isFile()) {
 			try {
 				// dynamic imports ignore query strings if it's using the file:// protocol (it has to if I want to resolve modules using absolute paths)
-				// luckily, tsx makes require and import function basically identically
+				// luckily, tsx makes require and import function identically
 				// thank god...
 				const resolvedPath = require.resolve(filePath);
 				const result = require(`${resolvedPath}?v=${Date.now()}`);
