@@ -33,34 +33,33 @@ export interface ILogger {
 
 export class LoggingStream extends Writable {
 	name: string;
-	rootDirectory: Nullable<string>;
-	channelDirectory: Nullable<string>;
+	directoryPath: Nullable<string>;
+	fileName: Nullable<string> = null;
 	mirrors: Writable[] = [];
 	stream: Nullable<Writable> = null;
-	constructor(name: string, rootDirectory: Nullable<string>) {
+	constructor(name: string, directoryPath: Nullable<string>) {
 		super();
 		this.name = name;
-		this.rootDirectory = rootDirectory;
-		this.channelDirectory = this.rootDirectory === null ? null : path.join(this.rootDirectory, this.name);
+		this.directoryPath = directoryPath;
 	}
 
 	_write(chunk: any, encoding: BufferEncoding, next: (error?: Error | null) => void): void {
-		if (this.stream === null && this.rootDirectory !== null && this.channelDirectory !== null) {
-			stat(this.rootDirectory).catch(() => mkdir(this.rootDirectory!))
-			.finally(() => stat(this.channelDirectory!).catch(() => mkdir(this.channelDirectory!)))
+		if (this.directoryPath !== null) {
+			const newFileName = `${moment().format('MM-DD-YY')}.log`;
+			if (this.fileName !== newFileName) {
+				this.fileName = newFileName;
+				this.stream?.destroy();
+			}
+			stat(this.directoryPath).catch(() => mkdir(this.directoryPath!, { recursive: true }))
 			.finally(() => {
-				const filePath = path.join(this.channelDirectory!, `${moment().format('MM-DD-YY')}.log`);
-				this.stream = createWriteStream(filePath);
+				if (this.stream === null) {
+					this.stream = createWriteStream(path.join(this.directoryPath!, this.fileName!));
+				}
 				this.stream.write(chunk.toString().replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, ''), next);
 				for (const mirror of this.mirrors) {
 					mirror.write(chunk);
 				}
 			});
-		} else {
-			this.stream?.write(chunk.toString().replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, ''), next);
-			for (const mirror of this.mirrors) {
-				mirror.write(chunk);
-			}
 		}
 	}
 
@@ -122,19 +121,25 @@ export class LoggingStream extends Writable {
 }
 
 export class LoggingManager {
-	streams: Map<string, LoggingStream>;
-	rootDirectory: Nullable<string>;
+	private streams: Map<string, LoggingStream>;
+	private directoryPath: Nullable<string> = null;
 
-	constructor(rootDirectory: Nullable<string>) {
+	constructor() {
 		this.streams = new Map<string, LoggingStream>();
-		this.rootDirectory = rootDirectory;
+	}
+
+	setDirectory(directoryPath: string) {
+		this.directoryPath = directoryPath;
+		for (const stream of this.streams.values()) {
+			stream.directoryPath = path.join(directoryPath, stream.name);
+		}
 	}
 
 	channel(channelName: string) {
 		if (this.streams.has(channelName)) {
 			return this.streams.get(channelName);
 		} else {
-			const stream = new LoggingStream(channelName, this.rootDirectory);
+			const stream = new LoggingStream(channelName, this.directoryPath ? path.join(this.directoryPath, channelName) : null);
 			this.streams.set(channelName, stream);
 			return stream;
 		}

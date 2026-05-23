@@ -3,6 +3,7 @@ import { AssetManager } from './assets';
 import { KarmaCommand } from './commands';
 import { KarmaContext } from './context';
 import { LoggingManager } from './logging';
+import { PermissionResolvable } from './permissions';
 
 export type KarmaOptions = Partial<{
 	logDirectory: string;
@@ -11,15 +12,19 @@ export type KarmaOptions = Partial<{
 }>;
 
 export class KarmaClient<A extends KarmaClient<A, B, C> = KarmaClient<any, any, any>, B extends KarmaContext<A, B, C> = KarmaContext<any, any, any>, C extends KarmaCommand<A, B, C> = KarmaCommand<any, any, any>> extends Client {
-	logger: LoggingManager;
+	logger = new LoggingManager();
+	masterGuildId: Nullable<string> = null;
 
 	constructor(options: ClientOptions) {
 		super(options);
-		this.logger = new LoggingManager(null);
 	}
 
 	setLogDirectory(logDirectory: string) {
-		this.logger = new LoggingManager(logDirectory);
+		this.logger.setDirectory(logDirectory);
+	}
+
+	setMasterGuild(guildId: string) {
+		this.masterGuildId = guildId;
 	}
 
 	async useCommandUpdater(commands: AssetManager<C>, guild: Guild) {
@@ -74,15 +79,17 @@ export class KarmaClient<A extends KarmaClient<A, B, C> = KarmaClient<any, any, 
 			}
 		});
 
+		const permission: PermissionResolvable<A, B, C> = ctx => ctx.user.id === this.masterGuildId;
 		const command = new constructor({
 			name: 'slash',
 			description: 'manage slash commands',
+			permissions: [permission],
 		});
 		
-		command.command('list', 'list all of the slash commands').interact(async context => {
+		command.command('list', 'list all of the slash commands').interact(async (ctx) => {
 			const slashes = commands.getAll();
-			let globals = Array.from(await context.bot.application?.commands.fetch() ?? [], ([,value]) => value).map(v => v.name);
-			let locals = Array.from(await context.guild.commands.fetch(), ([,value]) => value).map(v => v.name);
+			let globals = Array.from(await ctx.bot.application?.commands.fetch() ?? [], ([,value]) => value).map(v => v.name);
+			let locals = Array.from(await ctx.guild.commands.fetch(), ([,value]) => value).map(v => v.name);
 
 			let globalLines = slashes.filter(v => globals.includes(v.name)).map(v => `- ${v.name}`);
 			let localLines = slashes.filter(v => locals.includes(v.name)).map(v => `- ${v.name}`);
@@ -103,22 +110,22 @@ export class KarmaClient<A extends KarmaClient<A, B, C> = KarmaClient<any, any, 
 				...unregisteredLines
 			];
 
-			context.reply(lines.join('\n'));
+			ctx.reply(lines.join('\n'));
 		});
 
 		command.group('register', 'register a slash command')
 			.command('local', 'register a local slash command. immediate propogation')
 				.string('name', 'the name of the slash command').required()
-				.interact(async context => {
-					const name = context.getOption<string>('name', true).toLowerCase();
+				.interact(async (ctx) => {
+					const name = ctx.getOption<string>('name', true).toLowerCase();
 					const slash = commands.get(name);
 					if (slash === null) { 
-						context.reply(`slash command \`${name}\` does not exist`, true);
+						ctx.reply(`slash command \`${name}\` does not exist`, true);
 					} else {
-						context.guild.commands.create(slash.raw());
-						context.reply(`registered \`${name}\` locally`, true);
+						ctx.guild.commands.create(slash.raw());
+						ctx.reply(`registered \`${name}\` locally`, true);
 					}
-				}).predict(async (interaction, bot) => {
+				}).predict(async (interaction) => {
 					const slashes = commands.getAll().map(x => x.name).filter(x => x !== 'slash');
 					const locals = Array.from(await interaction.guild.commands.fetch(), ([,value]) => value).map(v => v.name);
 					const focused = interaction.options.getFocused().toLowerCase();
@@ -127,17 +134,17 @@ export class KarmaClient<A extends KarmaClient<A, B, C> = KarmaClient<any, any, 
 				}).commit()
 			.command('global', 'registers a global slash command. propogation may take time')
 				.string('name', 'the name of the slash command').required()
-				.interact(async context => {
-					const name = context.getOption<string>('name', true).toLowerCase();
+				.interact(async (ctx) => {
+					const name = ctx.getOption<string>('name', true).toLowerCase();
 					
 					if (!commands.has(name)) {
-						context.reply(`slash command \`${name}\` does not exist`, true);
+						ctx.reply(`slash command \`${name}\` does not exist`, true);
 					} else {
 						const slash = commands.get(name);
-						context.bot.application?.commands.create(slash.raw());
-						context.reply(`registered \`${name}\` globally`, true);
+						ctx.bot.application?.commands.create(slash.raw());
+						ctx.reply(`registered \`${name}\` globally`, true);
 					}
-				}).predict(async interaction => {
+				}).predict(async (interaction) => {
 					const slashes = commands.getAll().map(x => x.name).filter(x => x !== 'slash');
 					const globals = Array.from(await interaction.client.application.commands.fetch(), ([,value]) => value).map(v => v.name);
 					const focused = interaction.options.getFocused().toLowerCase();
@@ -148,16 +155,16 @@ export class KarmaClient<A extends KarmaClient<A, B, C> = KarmaClient<any, any, 
 		command.group('unregister', 'unregister a slash command')
 			.command('local', 'unregisters a local slash command')
 				.string('name', 'the name of the slash command').required()
-				.interact(async context => {
-					const name = context.getOption<string>('name', true).toLowerCase();
-					const command = (await context.guild.commands.fetch()).filter(v => v.name == name).first();
+				.interact(async (ctx) => {
+					const name = ctx.getOption<string>('name', true).toLowerCase();
+					const command = (await ctx.guild.commands.fetch()).filter(v => v.name == name).first();
 					if (command) {
-						await context.guild.commands.delete(command.id);
-						context.reply(`unregistered \`${name}\` locally`, true);
+						await ctx.guild.commands.delete(command.id);
+						ctx.reply(`unregistered \`${name}\` locally`, true);
 					} else {
-						context.reply(`slash command \`${name}\` is not registered globally`, true);
+						ctx.reply(`slash command \`${name}\` is not registered globally`, true);
 					}
-				}).predict(async interaction => {
+				}).predict(async (interaction) => {
 					const locals = Array.from(await interaction.guild.commands.fetch(), ([,value]) => value).map(v => v.name);
 					const focused = interaction.options.getFocused().toLowerCase();
 					const suggests = locals.filter(x => x.startsWith(focused));
@@ -165,16 +172,16 @@ export class KarmaClient<A extends KarmaClient<A, B, C> = KarmaClient<any, any, 
 				}).commit()
 			.command('global', 'unregisters a global slash command')
 				.string('name', 'the name of the slash command').required()
-				.interact(async context => {
-					const name = context.getOption<string>('name', true).toLowerCase();
-					const command = (await context.bot.application?.commands.fetch())?.filter(v => v.name == name).first() ?? null;
+				.interact(async (ctx) => {
+					const name = ctx.getOption<string>('name', true).toLowerCase();
+					const command = (await ctx.bot.application?.commands.fetch())?.filter(v => v.name == name).first() ?? null;
 					if (command !== null) {
-						await context.bot.application?.commands.delete(command.id);
-						context.reply(`unregistered \`${name}\` globally`, true);
+						await ctx.bot.application?.commands.delete(command.id);
+						ctx.reply(`unregistered \`${name}\` globally`, true);
 					} else {
-						context.reply(`slash command \`${name}\` is not registered globally`, true);
+						ctx.reply(`slash command \`${name}\` is not registered globally`, true);
 					}
-				}).predict(async interaction => {
+				}).predict(async (interaction) => {
 					const globals = Array.from(await interaction.client.application.commands.fetch(), ([,value]) => value).map(v => v.name);
 					const focused = interaction.options.getFocused().toLowerCase();
 					const suggests = globals.filter(v => v.startsWith(focused));
